@@ -1,6 +1,6 @@
 import { db } from "../../infra/db/client";
 import { projects } from "./project.schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export class ProjectRepository {
   async findById(id: string) {
