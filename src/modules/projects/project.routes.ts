@@ -2,7 +2,11 @@ import { Router } from "express";
 import { ProjectRepository } from "./project.repository";
 import { ProjectService } from "./project.service";
 import { OrganizationRepository } from "../organizations/organization.repository";
-import { projects } from "./project.schema";
+import {
+  authMiddleware,
+  CustomRequest,
+} from "../../infra/http/auth.middleware";
+
 const router = Router();
 
 const services = new ProjectService(
@@ -10,20 +14,20 @@ const services = new ProjectService(
   new OrganizationRepository(),
 );
 
+router.use(authMiddleware);
+
 // list projects
-//TEMP
-router.get("/", async (req, res) => {
-  const userId = req.header("x-user-id")!;
-  const orgId = req.header("x-org-id")!;
+router.get("/", async (req: CustomRequest, res) => {
+  const userId = req.user!.userId;
+  const orgId = req.user!.orgId;
   const projects = await services.listProjects(userId, orgId);
   res.json(projects);
 });
 
 // create project
-//TEMP
-router.post("/:orgId/projects", async (req, res) => {
-  const userId = req.header("x-user-id")!;
-  const orgId = req.header("x-org-id")!;
+router.post("/", async (req: CustomRequest, res) => {
+  const userId = req.user!.userId;
+  const orgId = req.user!.orgId;
   const { name } = req.body;
   const project = await services.createProject(name, userId, orgId);
   res.status(201).json(project);
