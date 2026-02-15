@@ -19,4 +19,12 @@ export class OrganizationRepository {
       );
     return res[0]?.role || null;
   }
+
+  async getUserOrgs(userId: string) {
+    const res = await db
+      .select()
+      .from(orgMemberships)
+      .where(eq(orgMemberships.userId, userId));
+    return res.map((r) => r.orgId);
+  }
 }

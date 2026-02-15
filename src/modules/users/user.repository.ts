@@ -1,6 +1,6 @@
 import { users } from "./user.schema";
 import { db } from "../../infra/db/client";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export class UserRepository {
   async findByEmail(email: string) {
