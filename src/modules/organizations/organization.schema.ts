@@ -2,10 +2,10 @@ import { pgTable, varchar, timestamp, pgEnum, uuid } from "drizzle-orm/pg-core";
 import { users } from "../users/user.schema";
 
 export const orgRoleEnum = pgEnum("org_role", [
-  "OWNER",
-  "ADMIN",
-  "MEMBER",
-  "VIEWER",
+  "ORG_OWNER",
+  "ORG_ADMIN",
+  "ORG_MEMBER",
+  "ORG_VIEWER",
 ]);
 
 export const organizations = pgTable("organizations", {
