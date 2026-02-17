@@ -27,4 +27,14 @@ export class OrganizationRepository {
       .where(eq(orgMemberships.userId, userId));
     return res.map((r) => r.orgId);
   }
+
+  async findByUserAndOrg(userId: string, orgId: string) {
+    const res = await db
+      .select()
+      .from(orgMemberships)
+      .where(
+        and(eq(orgMemberships.userId, userId), eq(orgMemberships.orgId, orgId)),
+      );
+    return res[0] || null;
+  }
 }
