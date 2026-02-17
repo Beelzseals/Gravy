@@ -8,16 +8,20 @@ export class ProjectService {
     private orgRepo: OrganizationRepository,
   ) {}
 
-  async listProjects(userId: string, orgId: string) {
+  async listProjects(userId: string, orgId: string): Promise<any> {
     const userRole = await this.orgRepo.getUserRole(userId, orgId);
     if (!userRole) throw new Error("User is not a member of the organization");
 
     return await this.projectRepo.findByOrgId(orgId);
   }
 
-  async createProject(name: string, userId: string, orgId: string) {
+  async createProject(
+    name: string,
+    userId: string,
+    orgId: string,
+  ): Promise<any> {
     const userRole = await this.orgRepo.getUserRole(userId, orgId);
-    if (!userRole || !hasRequiredRole(userRole, "MEMBER"))
+    if (!userRole || !hasRequiredRole(userRole, "ORG_MEMBER"))
       throw new Error("User is not a member of the organization");
 
     return await this.projectRepo.create(name, orgId);
