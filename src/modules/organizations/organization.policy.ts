@@ -1,5 +1,5 @@
 import { OrgMembershipRepository } from "./membership/membership.repository";
-import { ORG_ROLE } from "../../core/authorization/roles";
+import { OrgRole } from "../../core/authorization/roles";
 import { OrgAction } from "../../core/authorization/actions";
 
 interface PolicyParams {
@@ -19,7 +19,7 @@ export class OrganizationPolicy {
     );
     if (!orgMembership) return false;
 
-    if (params.action === "project:create") return true;
+    if (params.action === "create") return true;
 
     return false;
   }
