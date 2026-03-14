@@ -1,6 +1,6 @@
 import { SessionRepository } from "./session.repository";
-import { OrganizationRepository } from "../organizations/organization.repository";
-import { hasRequiredRole } from "../../core/authorization/policies";
+import { OrgMembershipRepository } from "../organizations/membership/membership.repository";
+import { hasRequiredRole } from "../../core/authorization/roles";
 import { UserRepository } from "../users/user.repository";
 import { signAccessToken } from "../../core/authorization/token";
 import bcrypt from "bcrypt";
@@ -10,7 +10,7 @@ import { Session } from "./session.schema";
 export class AuthService {
   constructor(
     private sessionRepo: SessionRepository,
-    private orgRepo: OrganizationRepository,
+    private orgMembershipRepo: OrgMembershipRepository,
     private userRepo: UserRepository,
   ) {}
 
@@ -22,8 +22,8 @@ export class AuthService {
       throw new Error("Invalid credentials");
     }
     // check role for the organization
-    const role = await this.orgRepo.getUserRole(user.id, orgId);
-    if (!hasRequiredRole(role, "MEMBER")) {
+    const role = await this.orgMembershipRepo.getUserRole(user.id, orgId);
+    if (!hasRequiredRole(role, "ORG_MEMBER")) {
       throw new Error("User does not have the required role");
     }
 
@@ -51,6 +51,26 @@ export class AuthService {
     return this.completeRotation(revoked[0], orgId);
   }
 
+  
+
+  async handleReuseOrGrace(tokenHash: string, orgId: string) {
+    const session = await this.sessionRepo.findByTokenHash(tokenHash);
+
+    if (!session) throw new Error("Unauthorized");
+
+    const revokedRecently =
+      session.revokedAt && Date.now() - session.revokedAt.getTime() < 2000;
+
+    if (revokedRecently) {
+      const child = await this.sessionRepo.findChild(session.id);
+      return this.issueTokensFromSession(child, orgId);
+    }
+
+    await this.sessionRepo.markSessionCompromised(session.id);
+
+    throw new Error("Unauthorized");
+  }
+
   async handleReuse(refreshToken: string) {
     const session = await this.sessionRepo.findByTokenHash(refreshToken);
 
@@ -66,15 +86,26 @@ export class AuthService {
       //TODO
     }
 
-    await this.markSessionCompromised(refreshToken);
+    await this.sessionRepo.markSessionCompromised(refreshToken);
 
     throw new Error("Unauthorized");
+  }
+
+  private async issueTokensFromSession(
+    session: Session | null,
+    orgId: string,
+  ) {
+    if (!session) throw new Error("Unauthorized");
+    return this.completeRotation(session, orgId);
   }
 
   private async completeRotation(oldSession: Session, orgId: string) {
     const newRefreshToken = generateSecureToken();
     const newHash = hashToken(newRefreshToken);
-    const role = await this.orgRepo.getUserRole(oldSession.userId, orgId);
+    const role = await this.orgMembershipRepo.getUserRole(
+      oldSession.userId,
+      orgId,
+    );
 
     // Create & insert new session with parentTokenId pointing to old session
     await this.sessionRepo.insertRotatedSession({
@@ -96,11 +127,6 @@ export class AuthService {
       accessToken,
       refreshToken: newRefreshToken,
     };
-  }
-
-  async markSessionCompromised(refreshToken: string) {
-    //TODO
-    const session = await this.sessionRepo.findByTokenHash(refreshToken);
   }
 
   async logout(refreshToken: string) {
