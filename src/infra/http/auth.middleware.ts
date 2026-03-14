@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "../../core/authorization/token";
 
 export interface CustomRequest extends Request {
-  user?: {
+  auth?: {
     userId: string;
     orgId: string;
     role: string;
@@ -21,7 +21,7 @@ export const authMiddleware = (
   try {
     const token = authHeader.split(" ")[1];
     const payload = verifyAccessToken(token);
-    req.user = {
+    req.auth = {
       userId: payload.userId,
       orgId: payload.orgId,
       role: payload.role,
