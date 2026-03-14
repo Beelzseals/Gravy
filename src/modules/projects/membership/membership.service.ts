@@ -1,4 +1,4 @@
-import { PROJECT_ROLE } from "../../../core/authorization/policies";
+import { PROJECT_ROLE } from "../../../core/authorization/roles";
 import { ProjectMembershipRepository } from "./membership.repository";
 
 export class ProjectMembershipService {

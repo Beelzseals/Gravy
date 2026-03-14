@@ -1,7 +1,6 @@
 import { pgTable, pgEnum, timestamp, uuid, index } from "drizzle-orm/pg-core";
 import { users } from "../../users/user.schema";
 import { projects } from "../project.schema";
-import { PROJECT_ROLE } from "../../../core/authorization/policies";
 
 export const projectRole = pgEnum("project_role", [
   "PROJECT_OWNER",
