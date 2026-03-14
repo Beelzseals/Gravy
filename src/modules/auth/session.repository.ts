@@ -1,7 +1,6 @@
 import { sessions } from "./session.schema";
 import { db } from "../../infra/db/client";
 import { eq, isNull, and, sql } from "drizzle-orm";
-import { generateSecureToken, hashToken } from "./token.util";
 
 export interface SessionInput {
   userId: string;
@@ -115,6 +114,14 @@ export class SessionRepository {
           compromised_at = NOW()
       WHERE id IN (SELECT id FROM full_chain);
     `);
+  }
+
+  async atomicRevokeIfActive(tokenHash: string) {
+    return db
+      .update(sessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(sessions.tokenHash, tokenHash), isNull(sessions.revokedAt)))
+      .returning();
   }
 
   /**

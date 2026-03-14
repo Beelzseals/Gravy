@@ -1,7 +1,8 @@
 import { db } from "../../../infra/db/client";
 import { projectMemberships } from "../membership/membership.schema";
 import { eq, and } from "drizzle-orm";
-import { PROJECT_ROLE } from "../../../core/authorization/policies";
+import { PROJECT_ROLE } from "../../../core/authorization/roles";
+import { DbTx } from "../../../infra/db/transaction";
 
 interface ProjectMembership {
   id: string;
@@ -10,13 +11,6 @@ interface ProjectMembership {
   role: PROJECT_ROLE | null;
   createdAt: Date;
   updatedAt: Date | null;
-}
-//TEMPORARY, TODO later
-interface Transaction {
-  insert: typeof db.insert;
-  select: typeof db.select;
-  delete: typeof db.delete;
-  update: typeof db.update;
 }
 
 export class ProjectMembershipRepository {
@@ -63,7 +57,7 @@ export class ProjectMembershipRepository {
       userId: string;
       role: PROJECT_ROLE;
     },
-    tx?: Transaction,
+    tx?: DbTx,
   ): Promise<ProjectMembership> {
     const res = await (tx ?? db)
       .insert(projectMemberships)
@@ -76,12 +70,7 @@ export class ProjectMembershipRepository {
     return res[0];
   }
 
-  updateRole(
-    projectId: string,
-    userId: string,
-    role: PROJECT_ROLE,
-    tx?: Transaction,
-  ) {
+  updateRole(projectId: string, userId: string, role: PROJECT_ROLE, tx?: DbTx) {
     return (tx ?? db)
       .update(projectMemberships)
       .set({ role })
@@ -93,11 +82,7 @@ export class ProjectMembershipRepository {
       );
   }
 
-  async delete(
-    projectId: string,
-    userId: string,
-    tx?: Transaction,
-  ): Promise<void> {
+  async delete(projectId: string, userId: string, tx?: DbTx): Promise<void> {
     await (tx ?? db)
       .delete(projectMemberships)
       .where(
