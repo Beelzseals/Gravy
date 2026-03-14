@@ -3,6 +3,7 @@ import { ProjectMembershipRepository } from "./membership/membership.repository"
 import { ProjectPolicy } from "./project.policy";
 import { db } from "../../infra/db/client";
 import { OrganizationPolicy } from "../organizations/organization.policy";
+import { DbTx } from "../../infra/db/transaction";
 
 export class ProjectService {
   constructor(
@@ -13,11 +14,10 @@ export class ProjectService {
   ) {}
 
   async listProjects(userId: string, orgId: string): Promise<any> {
-   return db.transaction(async (tx) => {
-      await this.projectPolicy.assert({
-        userId,
+    return db.transaction(async (tx: DbTx) => {
+      this.projectPolicy.assert("view", {
+        actorUserId: userId,
         orgId,
-        action: "project:list",
       });
       const projects = await this.projects.list(orgId);
       return projects;
@@ -26,10 +26,9 @@ export class ProjectService {
 
   async createProject(params: { userId: string; orgId: string; name: string }) {
     return db.transaction(async (tx) => {
-      await this.orgPolicy.assert({
-        userId: params.userId,
+      this.orgPolicy.assert("createProject", {
+        actorUserId: params.userId,
         orgId: params.orgId,
-        action: "project:create",
       });
 
       const project = await this.projects.create(
