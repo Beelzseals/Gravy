@@ -1,0 +1,33 @@
+import { db } from "../../../infra/db/client";
+import { orgMemberships } from "./membership.schema";
+import { eq, and } from "drizzle-orm";
+
+export class OrgMembershipRepository {
+  async getUserRole(userId: string, orgId: string) {
+    const res = await db
+      .select()
+      .from(orgMemberships)
+      .where(
+        and(eq(orgMemberships.userId, userId), eq(orgMemberships.orgId, orgId)),
+      );
+    return res[0]?.role || null;
+  }
+
+  async getUserOrgs(userId: string) {
+    const res = await db
+      .select()
+      .from(orgMemberships)
+      .where(eq(orgMemberships.userId, userId));
+    return res.map((r) => r.orgId);
+  }
+
+  async findByUserAndOrg(userId: string, orgId: string) {
+    const res = await db
+      .select()
+      .from(orgMemberships)
+      .where(
+        and(eq(orgMemberships.userId, userId), eq(orgMemberships.orgId, orgId)),
+      );
+    return res[0] || null;
+  }
+}

@@ -1,5 +1,5 @@
 import { db } from "../../infra/db/client";
-import { organizations, orgMemberships } from "./organization.schema";
+import { organizations } from "./organization.schema";
 import { eq, and } from "drizzle-orm";
 
 export class OrganizationRepository {
@@ -8,33 +8,5 @@ export class OrganizationRepository {
       .select()
       .from(organizations)
       .where(eq(organizations.id, id));
-  }
-
-  async getUserRole(userId: string, orgId: string) {
-    const res = await db
-      .select()
-      .from(orgMemberships)
-      .where(
-        and(eq(orgMemberships.userId, userId), eq(orgMemberships.orgId, orgId)),
-      );
-    return res[0]?.role || null;
-  }
-
-  async getUserOrgs(userId: string) {
-    const res = await db
-      .select()
-      .from(orgMemberships)
-      .where(eq(orgMemberships.userId, userId));
-    return res.map((r) => r.orgId);
-  }
-
-  async findByUserAndOrg(userId: string, orgId: string) {
-    const res = await db
-      .select()
-      .from(orgMemberships)
-      .where(
-        and(eq(orgMemberships.userId, userId), eq(orgMemberships.orgId, orgId)),
-      );
-    return res[0] || null;
   }
 }
