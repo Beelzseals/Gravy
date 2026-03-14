@@ -8,4 +8,13 @@ export type ProjectAction =
   | "changeMemberRole"
   | "removeMember";
 
-export type OrgAction = "create" | "update" | "invite" | "delete";
+export type OrgAction =
+  | "create"
+  | "update"
+  | "invite"
+  | "delete"
+  | "view"
+  | "updateSettings"
+  | "manageMembers"
+  | "createProject"
+  | "viewBilling";

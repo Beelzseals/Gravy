@@ -20,6 +20,9 @@ export class ProjectMembershipService {
     private projectRepository: ProjectRepository,
   ) {}
 
+  /**
+   * Helper method to fetch both org and project membership for a user in a single call.
+   */
   private async getAuthorizationContext(
     actorUserId: string,
     projectId: string,
@@ -92,12 +95,12 @@ export class ProjectMembershipService {
       projectRole: auth.projectRole,
     });
 
-    const existing =
+    const existingMembership =
       await this.projectMembershipRepository.findByProjectAndUser(
         projectId,
         targetUserId,
       );
-    if (existing) {
+    if (existingMembership) {
       throw new Error("User is already a project member.");
     }
 
