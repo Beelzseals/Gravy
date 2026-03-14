@@ -1,10 +1,7 @@
-export type ORG_ROLE = "ORG_OWNER" | "ORG_ADMIN" | "ORG_MEMBER" | "ORG_VIEWER";
-export type PROJECT_ROLE =
-  | "PROJECT_OWNER"
-  | "PROJECT_EDITOR"
-  | "PROJECT_VIEWER";
+export type OrgRole = "ORG_OWNER" | "ORG_ADMIN" | "ORG_MEMBER" | "ORG_VIEWER";
+export type ProjectRole = "PROJECT_OWNER" | "PROJECT_EDITOR" | "PROJECT_VIEWER";
 
-export const ORG_ROLE_HIERARCHY: Record<ORG_ROLE, number> = {
+export const ORG_ROLE_HIERARCHY: Record<OrgRole, number> = {
   ORG_OWNER: 4,
   ORG_ADMIN: 3,
   ORG_MEMBER: 2,
@@ -12,8 +9,8 @@ export const ORG_ROLE_HIERARCHY: Record<ORG_ROLE, number> = {
 };
 
 export const hasRequiredRole = (
-  userRole: ORG_ROLE,
-  requiredRole: ORG_ROLE,
+  userRole: OrgRole,
+  requiredRole: OrgRole,
 ): boolean => {
   return ORG_ROLE_HIERARCHY[userRole] >= ORG_ROLE_HIERARCHY[requiredRole];
 };
