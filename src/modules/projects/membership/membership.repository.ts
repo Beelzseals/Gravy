@@ -1,24 +1,19 @@
 import { db } from "../../../infra/db/client";
 import { projectMemberships } from "../membership/membership.schema";
 import { eq, and } from "drizzle-orm";
-import { PROJECT_ROLE } from "../../../core/authorization/roles";
+import {
+  CreateProjectMembershipInput,
+  UpdateProjectMembershipRoleInput,
+  ProjectMembership,
+} from "./membership.types";
 import { DbTx } from "../../../infra/db/transaction";
-
-interface ProjectMembership {
-  id: string;
-  projectId: string;
-  userId: string;
-  role: PROJECT_ROLE | null;
-  createdAt: Date;
-  updatedAt: Date | null;
-}
 
 export class ProjectMembershipRepository {
   async findByProjectAndUser(
     projectId: string,
     userId: string,
   ): Promise<ProjectMembership | null> {
-    const res = await db
+    const query = await db
       .select()
       .from(projectMemberships)
       .where(
@@ -27,19 +22,19 @@ export class ProjectMembershipRepository {
           eq(projectMemberships.userId, userId),
         ),
       );
-    return res.length > 0 ? res[0] : null;
+    return query.length > 0 ? query[0] : null;
   }
 
   async findByProject(projectId: string): Promise<ProjectMembership[]> {
-    const res = await db
+    const query = await db
       .select()
       .from(projectMemberships)
       .where(eq(projectMemberships.projectId, projectId));
-    return res;
+    return query;
   }
 
-  async countOwners(projectId: string): Promise<number> {
-    const res = await db
+  async countOwners(projectId: string) {
+    const query = await db
       .select()
       .from(projectMemberships)
       .where(
@@ -48,48 +43,59 @@ export class ProjectMembershipRepository {
           eq(projectMemberships.role, "PROJECT_OWNER"),
         ),
       );
-    return res.length;
+    return query.length;
+  }
+
+  async listByProject(projectId: string): Promise<ProjectMembership[]> {
+    const query = await db
+      .select()
+      .from(projectMemberships)
+      .where(eq(projectMemberships.projectId, projectId));
+    return query;
   }
 
   async create(
-    data: {
-      projectId: string;
-      userId: string;
-      role: PROJECT_ROLE;
-    },
+    input: CreateProjectMembershipInput,
     tx?: DbTx,
   ): Promise<ProjectMembership> {
-    const res = await (tx ?? db)
+    const query = await (tx ?? db)
       .insert(projectMemberships)
       .values({
-        projectId: data.projectId,
-        userId: data.userId,
-        role: data.role,
+        projectId: input.projectId,
+        userId: input.userId,
+        role: input.role,
       })
       .returning();
-    return res[0];
+    return query[0];
   }
 
-  updateRole(projectId: string, userId: string, role: PROJECT_ROLE, tx?: DbTx) {
-    return (tx ?? db)
+  async updateRole(
+    input: UpdateProjectMembershipRoleInput,
+    tx?: DbTx,
+  ): Promise<ProjectMembership> {
+    const query = await (tx ?? db)
       .update(projectMemberships)
-      .set({ role })
+      .set({ role: input.role })
       .where(
         and(
-          eq(projectMemberships.projectId, projectId),
-          eq(projectMemberships.userId, userId),
+          eq(projectMemberships.projectId, input.projectId),
+          eq(projectMemberships.userId, input.userId),
         ),
-      );
+      )
+      .returning();
+    return query[0];
   }
 
-  async delete(projectId: string, userId: string, tx?: DbTx): Promise<void> {
-    await (tx ?? db)
+  async delete(projectId: string, userId: string, tx?: DbTx) {
+    const query = await (tx ?? db)
       .delete(projectMemberships)
       .where(
         and(
           eq(projectMemberships.projectId, projectId),
           eq(projectMemberships.userId, userId),
         ),
-      );
+      )
+      .returning();
+    return query;
   }
 }
