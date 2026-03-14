@@ -1,75 +1,124 @@
 import { ProjectAction } from "../../core/authorization/actions";
-import { OrgMembershipRepository } from "../organizations/membership/membership.repository";
-import { ProjectMembershipRepository } from "./membership/membership.repository";
-import { ProjectRepository } from "./project.repository";
+import { OrgRole, ProjectRole } from "../../core/authorization/roles";
+
+export interface ProjectPolicyContext {
+  actorUserId: string;
+  orgId?: string;
+  projectId?: string;
+  orgRole?: OrgRole | null;
+  projectRole?: ProjectRole | null;
+}
 
 export class ProjectPolicy {
-  constructor(
-    private readonly projectRepo: ProjectRepository,
-    private readonly orgRepo: OrgMembershipRepository,
-    private readonly projectMemberRepo: ProjectMembershipRepository,
-  ) {}
+  can(action: ProjectAction, ctx: ProjectPolicyContext): boolean {
+    if (!ctx.actorUserId) return false;
 
-  async can(params: {
-    userId: string;
-    orgId: string;
-    projectId?: string;
-    action: ProjectAction;
-  }): Promise<boolean> {
-    const orgmembership = await this.orgRepo.findByUserAndOrg(
-      params.userId,
-      params.orgId,
-    );
-    if (!orgmembership) return false;
+    switch (action) {
+      case "create":
+        return this.canCreate(ctx);
 
-    // project:list only requires org membership — no specific project needed
-    if (params.action === "project:list") return true;
+      case "view":
+        return this.canView(ctx);
 
-    if (!params.projectId) return false;
+      case "update":
+        return this.canUpdate(ctx);
 
-    const project = await this.projectRepo.findById(params.projectId);
-    if (!project) return false;
+      case "delete":
+        return this.canDelete(ctx);
 
-    if (project.orgId !== params.orgId) return false;
+      case "inviteMember":
+        return this.canInviteMember(ctx);
 
-    // Org Owner can do anything
-    if (orgmembership.role === "ORG_OWNER") return true;
+      case "changeMemberRole":
+        return this.canChangeMemberRole(ctx);
 
-    // Org Admin can do anything except delete
-    if (
-      orgmembership.role === "ORG_ADMIN" &&
-      params.action !== "project:delete"
-    ) {
-      return true;
-    }
+      case "removeMember":
+        return this.canRemoveMember(ctx);
 
-    const projectMembership = await this.projectMemberRepo.findByProjectAndUser(
-      params.projectId,
-      params.userId,
-    );
-    if (!projectMembership) return false;
-
-    switch (params.action) {
-      case "project:view":
-        return true;
-      case "project:update":
-        if (projectMembership.role === "PROJECT_OWNER") return true;
-        if (orgmembership.role === "ORG_ADMIN") return true;
-        return false;
-      case "project:delete":
-        return projectMembership.role === "PROJECT_OWNER";
       default:
         return false;
     }
   }
+  private canCreate(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId) return false;
+    if (!ctx.orgRole) return false;
 
-  async assert(params: {
-    userId: string;
-    orgId: string;
-    projectId?: string;
-    action: ProjectAction;
-  }) {
-    const allowed = await this.can(params);
+    return ctx.orgRole === "ORG_OWNER" || ctx.orgRole === "ORG_ADMIN";
+  }
+
+  private canView(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole) return false;
+    if (!ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER" ||
+      ctx.projectRole === "PROJECT_EDITOR" ||
+      ctx.projectRole === "PROJECT_VIEWER"
+    );
+  }
+
+  private canUpdate(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole) return false;
+    if (!ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER" ||
+      ctx.projectRole === "PROJECT_EDITOR"
+    );
+  }
+
+  private canDelete(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole || !ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER"
+    );
+  }
+
+  private canInviteMember(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole || !ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER"
+    );
+  }
+
+  private canChangeMemberRole(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole || !ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER"
+    );
+  }
+
+  private canRemoveMember(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId || !ctx.projectId) return false;
+    if (!ctx.orgRole || !ctx.projectRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.projectRole === "PROJECT_OWNER"
+    );
+  }
+
+  assert(action: ProjectAction, ctx: ProjectPolicyContext) {
+    const allowed = this.can(action, ctx);
     if (!allowed) {
       throw new Error("Not allowed to perform this action");
     }
