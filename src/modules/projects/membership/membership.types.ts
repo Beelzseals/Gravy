@@ -6,6 +6,7 @@ export interface AddProjectMemberInput {
   projectId: string;
   targetUserId: string;
   role: ProjectRole;
+  orgId: string;
 }
 
 export interface ChangeProjectMemberRoleInput {
@@ -13,12 +14,15 @@ export interface ChangeProjectMemberRoleInput {
   projectId: string;
   targetUserId: string;
   role: ProjectRole;
+  orgId: string;
+  newRole: ProjectRole;
 }
 
 export interface RemoveProjectMemberInput {
   actorUserId: string;
   projectId: string;
   targetUserId: string;
+  orgId: string;
 }
 
 export interface AuthorizationContext {

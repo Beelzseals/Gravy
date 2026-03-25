@@ -6,6 +6,7 @@ import { signAccessToken } from "../../core/authorization/token";
 import bcrypt from "bcrypt";
 import { generateSecureToken, hashToken } from "./token.util";
 import { Session } from "./session.schema";
+import { CustomError } from "../../core/error/error.factory";
 
 export class AuthService {
   constructor(
@@ -19,12 +20,12 @@ export class AuthService {
     const isValid = await bcrypt.compare(password, user?.passwordHash || "");
     // check user/email and password
     if (!isValid || !user) {
-      throw new Error("Invalid credentials");
+      throw CustomError.unauthorized("Invalid credentials");
     }
     // check role for the organization
     const role = await this.orgMembershipRepo.getUserRole(user.id, orgId);
     if (!hasRequiredRole(role, "ORG_MEMBER")) {
-      throw new Error("User does not have the required role");
+      throw CustomError.forbidden("User does not have the required role");
     }
 
     const accessToken = signAccessToken({ userId: user.id, orgId, role });
@@ -51,12 +52,10 @@ export class AuthService {
     return this.completeRotation(revoked[0], orgId);
   }
 
-  
-
   async handleReuseOrGrace(tokenHash: string, orgId: string) {
     const session = await this.sessionRepo.findByTokenHash(tokenHash);
 
-    if (!session) throw new Error("Unauthorized");
+    if (!session) throw CustomError.unauthorized("Unauthorized");
 
     const revokedRecently =
       session.revokedAt && Date.now() - session.revokedAt.getTime() < 2000;
@@ -68,14 +67,14 @@ export class AuthService {
 
     await this.sessionRepo.markSessionCompromised(session.id);
 
-    throw new Error("Unauthorized");
+    throw CustomError.unauthorized("Unauthorized");
   }
 
   async handleReuse(refreshToken: string) {
     const session = await this.sessionRepo.findByTokenHash(refreshToken);
 
     if (!session) {
-      throw new Error("Unauthorized");
+      throw CustomError.unauthorized("Unauthorized");
     }
 
     const revokedRecently =
@@ -88,14 +87,11 @@ export class AuthService {
 
     await this.sessionRepo.markSessionCompromised(refreshToken);
 
-    throw new Error("Unauthorized");
+    throw CustomError.unauthorized("Unauthorized");
   }
 
-  private async issueTokensFromSession(
-    session: Session | null,
-    orgId: string,
-  ) {
-    if (!session) throw new Error("Unauthorized");
+  private async issueTokensFromSession(session: Session | null, orgId: string) {
+    if (!session) throw CustomError.unauthorized("Unauthorized");
     return this.completeRotation(session, orgId);
   }
 

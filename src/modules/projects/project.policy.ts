@@ -1,5 +1,6 @@
 import { ProjectAction } from "../../core/authorization/actions";
 import { OrgRole, ProjectRole } from "../../core/authorization/roles";
+import { CustomError } from "../../core/error/error.factory";
 
 export interface ProjectPolicyContext {
   actorUserId: string;
@@ -120,7 +121,7 @@ export class ProjectPolicy {
   assert(action: ProjectAction, ctx: ProjectPolicyContext) {
     const allowed = this.can(action, ctx);
     if (!allowed) {
-      throw new Error("Not allowed to perform this action");
+      throw CustomError.forbidden("Not allowed to perform this action");
     }
   }
 }

@@ -11,6 +11,7 @@ import {
   RemoveProjectMemberInput,
   ProjectMembership,
 } from "./membership.types";
+import { CustomError } from "../../../core/error/error.factory";
 
 export class ProjectMembershipService {
   constructor(
@@ -23,7 +24,7 @@ export class ProjectMembershipService {
   /**
    * Helper method to fetch both org and project membership for a user in a single call.
    */
-  private async getAuthorizationContext(
+  private async getPolicyContext(
     actorUserId: string,
     projectId: string,
     orgId: string,
@@ -37,20 +38,35 @@ export class ProjectMembershipService {
     ]);
 
     return {
+      actorUserId,
       orgId,
+      projectId,
       orgRole: orgMembership?.role ?? null,
       projectRole: projectMembership?.role ?? null,
     };
   }
 
-  async listProjectMembers(
+  /**
+   * Resolves a project by its ID within a specific organization.
+   * @returns The project if found.
+   */
+  private async resolveProject(orgId: string, projectId: string) {
+    const project = await this.projectRepository.findByIdScoped(
+      projectId,
+      orgId,
+    );
+    if (!project) throw CustomError.notFound("Project not found");
+    return project;
+  }
+
+  async listMembers(
+    orgId: string,
     actorUserId: string,
     projectId: string,
   ): Promise<ProjectMembership[]> {
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error("Project not found.");
+    const project = await this.resolveProject(orgId, projectId);
 
-    const auth = await this.getAuthorizationContext(
+    const auth = await this.getPolicyContext(
       actorUserId,
       projectId,
       project.orgId,
@@ -67,21 +83,22 @@ export class ProjectMembershipService {
     return this.projectMembershipRepository.listByProject(projectId);
   }
 
-  async addProjectMember(
-    input: AddProjectMemberInput,
-  ): Promise<ProjectMembership> {
-    const { actorUserId, projectId, targetUserId, role } = input;
-
+  async addMember({
+    actorUserId,
+    projectId,
+    targetUserId,
+    role,
+    orgId,
+  }: AddProjectMemberInput): Promise<ProjectMembership> {
     if (actorUserId === targetUserId && role !== "PROJECT_OWNER") {
-      throw new Error(
-        "Self-adding is only valid during ownership bootstrap or explicit owner management.",
+      throw CustomError.unprocessableEntity(
+        "Cannot add yourself to the project unless you are a PROJECT_OWNER.",
       );
     }
 
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error("Project not found.");
+    const project = await this.resolveProject(orgId, projectId);
 
-    const auth = await this.getAuthorizationContext(
+    const auth = await this.getPolicyContext(
       actorUserId,
       projectId,
       project.orgId,
@@ -101,7 +118,9 @@ export class ProjectMembershipService {
         targetUserId,
       );
     if (existingMembership) {
-      throw new Error("User is already a project member.");
+      throw CustomError.unprocessableEntity(
+        "User is already a project member.",
+      );
     }
 
     const targetOrgMembership =
@@ -110,7 +129,7 @@ export class ProjectMembershipService {
         project.orgId,
       );
     if (!targetOrgMembership) {
-      throw new Error(
+      throw CustomError.unprocessableEntity(
         "Target user must belong to the organization before being added to the project.",
       );
     }
@@ -122,16 +141,18 @@ export class ProjectMembershipService {
     });
   }
 
-  async changeProjectMemberRole(
-    input: ChangeProjectMemberRoleInput,
-  ): Promise<ProjectMembership> {
-    const { actorUserId, projectId, targetUserId, role: newRole } = input;
-
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error("Project not found.");
+  async changeRole({
+    actorUserId,
+    projectId,
+    targetUserId,
+    orgId,
+    newRole,
+  }: ChangeProjectMemberRoleInput): Promise<ProjectMembership> {
+    const project = await this.resolveProject(orgId, projectId);
+    if (!project) throw CustomError.notFound("Project not found.");
 
     return db.transaction(async (tx: DbTx): Promise<ProjectMembership> => {
-      const auth = await this.getAuthorizationContext(
+      const auth = await this.getPolicyContext(
         actorUserId,
         projectId,
         project.orgId,
@@ -152,14 +173,13 @@ export class ProjectMembershipService {
         );
 
       if (!existingMembership) {
-        throw new Error("Project membership not found.");
+        throw CustomError.notFound("Project membership not found.");
       }
 
       if (existingMembership.role === newRole) {
         return existingMembership;
       }
 
-      // Critical invariant:
       // if demoting an owner, ensure at least one owner remains
       if (
         existingMembership.role === "PROJECT_OWNER" &&
@@ -169,7 +189,7 @@ export class ProjectMembershipService {
           await this.projectMembershipRepository.countOwners(projectId);
 
         if (ownerCount <= 1) {
-          throw new Error(
+          throw CustomError.unprocessableEntity(
             "Project must always have at least one PROJECT_OWNER.",
           );
         }
@@ -186,14 +206,13 @@ export class ProjectMembershipService {
     });
   }
 
-  async removeProjectMember(input: RemoveProjectMemberInput) {
-    const { actorUserId, projectId, targetUserId } = input;
+  async removeMember(input: RemoveProjectMemberInput) {
+    const { actorUserId, projectId, targetUserId, orgId } = input;
 
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error("Project not found.");
+    const project = await this.resolveProject(orgId, projectId);
 
     await db.transaction(async (tx: DbTx) => {
-      const auth = await this.getAuthorizationContext(
+      const auth = await this.getPolicyContext(
         actorUserId,
         projectId,
         project.orgId,
@@ -214,7 +233,7 @@ export class ProjectMembershipService {
         );
 
       if (!membership) {
-        throw new Error("Project membership not found.");
+        throw CustomError.notFound("Project membership not found.");
       }
 
       if (membership.role === "PROJECT_OWNER") {
@@ -222,7 +241,7 @@ export class ProjectMembershipService {
           await this.projectMembershipRepository.countOwners(projectId);
 
         if (ownerCount <= 1) {
-          throw new Error(
+          throw CustomError.unprocessableEntity(
             "Project must always have at least one PROJECT_OWNER.",
           );
         }
@@ -245,8 +264,8 @@ export class ProjectMembershipService {
     projectRole: ProjectRole | null;
   }> {
     const project = await this.projectRepository.findById(projectId);
-    if (!project) throw new Error("Project not found.");
+    if (!project) throw CustomError.notFound("Project not found");
 
-    return this.getAuthorizationContext(actorUserId, projectId, project.orgId);
+    return this.getPolicyContext(actorUserId, projectId, project.orgId);
   }
 }
