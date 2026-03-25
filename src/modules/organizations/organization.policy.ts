@@ -1,5 +1,6 @@
 import { OrgRole } from "../../core/authorization/roles";
 import { OrgAction } from "../../core/authorization/actions";
+import { CustomError } from "../../core/error/error.factory";
 
 export interface OrgPolicyContext {
   actorUserId: string;
@@ -61,7 +62,7 @@ export class OrganizationPolicy {
   assert(action: OrgAction, ctx: OrgPolicyContext) {
     const isAllowed = this.can(action, ctx);
     if (!isAllowed) {
-      throw new Error("Unauthorized");
+      throw CustomError.unauthorized("Unauthorized");
     }
   }
 }

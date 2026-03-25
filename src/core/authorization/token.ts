@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { CustomError } from "../error/error.factory";
 
 export const TTL = "15m";
 
@@ -20,6 +21,6 @@ export const verifyAccessToken = (token: string): AccessTokenPayload => {
     ) as AccessTokenPayload;
     return decoded;
   } catch (err) {
-    throw new Error("Invalid token");
+    throw new CustomError("Invalid access token", 401).unauthorized();
   }
 };
