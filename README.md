@@ -1,6 +1,6 @@
 # Gravy
 
-An enterprise-style backend learner project built with **Express**, **Drizzle ORM**, and **PostgreSQL**. Designed as a hands-on exercise in real-world backend architecture — covering authentication, authorization, multi-tenant data modeling, background jobs, caching, and testing.
+An enterprise-style backend project built with **Express**, **Drizzle ORM**, and **PostgreSQL**. Designed as a hands-on exercise in real-world backend architecture — covering authentication, authorization, multi-tenant data modeling, background jobs, caching, and testing.
 
 ## Architecture Highlights
 
