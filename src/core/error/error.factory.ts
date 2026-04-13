@@ -2,6 +2,7 @@ export class CustomError extends Error {
   constructor(
     public readonly message: string,
     public readonly statusCode: number,
+    public readonly code: string = statusCode.toString(),
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -9,22 +10,22 @@ export class CustomError extends Error {
   }
 
   static badRequest(message: string) {
-    return new CustomError(message, 400);
+    return new CustomError(message, 400, "BAD_REQUEST");
   }
 
   static unauthorized(message: string) {
-    return new CustomError(message, 401);
+    return new CustomError(message, 401, "UNAUTHORIZED");
   }
 
   static forbidden(message: string) {
-    return new CustomError(message, 403);
+    return new CustomError(message, 403, "FORBIDDEN");
   }
 
   static notFound(message: string) {
-    return new CustomError(message, 404);
+    return new CustomError(message, 404, "NOT_FOUND");
   }
 
   static unprocessableEntity(message: string) {
-    return new CustomError(message, 422);
+    return new CustomError(message, 422, "UNPROCESSABLE_ENTITY");
   }
 }

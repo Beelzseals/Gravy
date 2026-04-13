@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { initLogger } from "./infra/logger/logger";
 import projectRoutes from "./modules/projects/project.routes";
 import { router as authRoutes } from "./modules/auth/auth.routes";
+import { errorHandler } from "./core/error/error.handler";
 dotenv.config();
 
 const app = express();
@@ -10,6 +11,7 @@ const logger = initLogger();
 
 app.use(express.json());
 app.use("/auth", authRoutes);
+app.use(errorHandler);
 app.use("/projects", projectRoutes);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
