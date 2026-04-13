@@ -35,6 +35,8 @@ export class ProjectPolicy {
 
       case "removeMember":
         return this.canRemoveMember(ctx);
+      case "list":
+        return this.canList(ctx);
 
       default:
         return false;
@@ -115,6 +117,17 @@ export class ProjectPolicy {
       ctx.orgRole === "ORG_OWNER" ||
       ctx.orgRole === "ORG_ADMIN" ||
       ctx.projectRole === "PROJECT_OWNER"
+    );
+  }
+
+  private canList(ctx: ProjectPolicyContext): boolean {
+    if (!ctx.orgId) return false;
+    if (!ctx.orgRole) return false;
+
+    return (
+      ctx.orgRole === "ORG_OWNER" ||
+      ctx.orgRole === "ORG_ADMIN" ||
+      ctx.orgRole === "ORG_MEMBER"
     );
   }
 
