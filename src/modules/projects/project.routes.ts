@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ProjectRepository } from "./project.repository";
 import { ProjectMembershipRepository } from "./membership/membership.repository";
 import { ProjectService } from "./project.service";
+import membershipRouter from "./membership/membership.routes";
 import { ProjectPolicy } from "./project.policy";
 import { OrganizationPolicy } from "../organizations/organization.policy";
 import {
@@ -15,7 +16,7 @@ const createProjectBodySchema = z.object({
   name: z.string().min(1).max(255),
 });
 
-const services = new ProjectService(
+const projectServices = new ProjectService(
   new ProjectRepository(),
   new ProjectMembershipRepository(),
   new OrganizationPolicy(),
@@ -29,7 +30,7 @@ router.use(authMiddleware);
  */
 router.get("/", async (req: CustomRequest, res) => {
   const { userId, orgId } = req.auth!;
-  const projects = await services.listProjects(userId, orgId);
+  const projects = await projectServices.listProjects(userId, orgId);
   res.json(projects);
 });
 
@@ -43,7 +44,7 @@ router.post("/", async (req: CustomRequest, res) => {
   }
 
   const { userId, orgId } = req.auth!;
-  const newProject = await services.createProject({
+  const newProject = await projectServices.createProject({
     userId,
     orgId,
     name: parsedBody.data.name,
@@ -52,4 +53,9 @@ router.post("/", async (req: CustomRequest, res) => {
   res.status(201).json(newProject);
 });
 
+// Mount membership routes nested under /:projectId/members
+router.use("/:projectId/members", membershipRouter);
+  
 export default router;
+
+
