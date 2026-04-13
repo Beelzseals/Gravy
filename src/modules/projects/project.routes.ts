@@ -55,7 +55,5 @@ router.post("/", async (req: CustomRequest, res) => {
 
 // Mount membership routes nested under /:projectId/members
 router.use("/:projectId/members", membershipRouter);
-  
+
 export default router;
-
-

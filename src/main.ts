@@ -2,12 +2,14 @@ import express from "express";
 import dotenv from "dotenv";
 import { initLogger } from "./infra/logger/logger";
 import projectRoutes from "./modules/projects/project.routes";
+import { router as authRoutes } from "./modules/auth/auth.routes";
 dotenv.config();
 
 const app = express();
 const logger = initLogger();
 
 app.use(express.json());
+app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
