@@ -13,7 +13,6 @@ export interface ChangeProjectMemberRoleInput {
   actorUserId: string;
   projectId: string;
   targetUserId: string;
-  role: ProjectRole;
   orgId: string;
   newRole: ProjectRole;
 }
