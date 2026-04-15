@@ -6,6 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/main.js",
     "build": "tsc",
+    "test": "vitest",
     "generate:dev": "drizzle-kit generate --config drizzle.dev.config.ts",
     "generate:prod": "drizzle-kit generate --config drizzle.prod.config.ts",
     "migrate:dev": "drizzle-kit migrate --config drizzle.dev.config.ts",
