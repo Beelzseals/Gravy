@@ -1,5 +1,5 @@
 import { OrgRole, ProjectRole } from "../../../core/authorization/roles";
-import { db } from "../../../infra/db/client";
+import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { DbTx } from "../../../infra/db/transaction";
 import { OrgMembershipRepository } from "../../organizations/membership/membership.repository";
 import { ProjectPolicy } from "../project.policy";
@@ -19,6 +19,7 @@ export class ProjectMembershipService {
     private projectMembershipRepository: ProjectMembershipRepository,
     private projectPolicy: ProjectPolicy,
     private projectRepository: ProjectRepository,
+    private db: NodePgDatabase<any>,
   ) {}
 
   /**
@@ -151,7 +152,7 @@ export class ProjectMembershipService {
     const project = await this.resolveProject(orgId, projectId);
     if (!project) throw CustomError.notFound("Project not found.");
 
-    return db.transaction(async (tx: DbTx): Promise<ProjectMembership> => {
+    return this.db.transaction(async (tx: DbTx): Promise<ProjectMembership> => {
       const auth = await this.getPolicyContext(
         actorUserId,
         projectId,
@@ -189,8 +190,8 @@ export class ProjectMembershipService {
           await this.projectMembershipRepository.countOwners(projectId);
 
         if (ownerCount <= 1) {
-          throw CustomError.unprocessableEntity(
-            "Project must always have at least one PROJECT_OWNER.",
+          throw CustomError.ownershipRequired(
+            "Cannot remove the last owner",
           );
         }
       }
@@ -211,7 +212,7 @@ export class ProjectMembershipService {
 
     const project = await this.resolveProject(orgId, projectId);
 
-    await db.transaction(async (tx: DbTx) => {
+    await this.db.transaction(async (tx: DbTx) => {
       const auth = await this.getPolicyContext(
         actorUserId,
         projectId,
@@ -241,8 +242,8 @@ export class ProjectMembershipService {
           await this.projectMembershipRepository.countOwners(projectId);
 
         if (ownerCount <= 1) {
-          throw CustomError.unprocessableEntity(
-            "Project must always have at least one PROJECT_OWNER.",
+          throw CustomError.ownershipRequired(
+            "Cannot remove the last owner",
           );
         }
       }

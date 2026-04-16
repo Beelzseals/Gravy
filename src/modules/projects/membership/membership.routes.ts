@@ -6,6 +6,7 @@ import { ProjectMembershipRepository } from "./membership.repository";
 import { OrgMembershipRepository } from "../../organizations/membership/membership.repository";
 import { ProjectPolicy } from "../project.policy";
 import { ProjectRepository } from "../project.repository";
+import { db } from "../../../infra/db/client";
 
 const router = Router({ mergeParams: true });
 const membershipService = new ProjectMembershipService(
@@ -13,6 +14,7 @@ const membershipService = new ProjectMembershipService(
   new ProjectMembershipRepository(),
   new ProjectPolicy(),
   new ProjectRepository(),
+  db,
 );
 
 /**
