@@ -30,6 +30,6 @@ export class CustomError extends Error {
   }
 
   static ownershipRequired(message: string) {
-    return new CustomError(message, 409, "OWNERSHIP_REQUIRED");
+    return new CustomError(message, 409, "INVARIANT_VIOLATION");
   }
 }
