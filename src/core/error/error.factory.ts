@@ -28,4 +28,8 @@ export class CustomError extends Error {
   static unprocessableEntity(message: string) {
     return new CustomError(message, 422, "UNPROCESSABLE_ENTITY");
   }
+
+  static ownershipRequired(message: string) {
+    return new CustomError(message, 409, "OWNERSHIP_REQUIRED");
+  }
 }
