@@ -1,5 +1,7 @@
 import { defineConfig } from "drizzle-kit";
-import { config } from "./src/config";
+import { getConfig } from "./src/config";
+
+const config = getConfig();
 
 export default defineConfig({
   schema: "./src/infra/db/schema.ts",
