@@ -17,7 +17,9 @@
   },
   "packageManager": "yarn@4.12.0",
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1032.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.74.1",
     "dotenv": "^17.2.4",
     "drizzle-orm": "^0.45.1",
     "express": "5.2.1",
