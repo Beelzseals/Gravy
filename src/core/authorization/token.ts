@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { CustomError } from "../error/error.factory";
+import { config } from "../../config";
 
 export const TTL = "15m";
 
@@ -10,17 +11,14 @@ interface AccessTokenPayload {
 }
 
 export const signAccessToken = (payload: AccessTokenPayload): string => {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: TTL });
+  return jwt.sign(payload, config.jwt.secret, { expiresIn: TTL });
 };
 
 export const verifyAccessToken = (token: string): AccessTokenPayload => {
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!,
-    ) as AccessTokenPayload;
+    const decoded = jwt.verify(token, config.jwt.secret) as AccessTokenPayload;
     return decoded;
   } catch (err) {
-    throw new CustomError("Invalid access token", 401).unauthorized();
+    throw new CustomError("Invalid access token", 401);
   }
 };

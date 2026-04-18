@@ -1,11 +1,9 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import { initLogger } from "./infra/logger/logger";
 import projectRoutes from "./modules/projects/project.routes";
 import { router as authRoutes } from "./modules/auth/auth.routes";
 import { errorHandler } from "./core/error/error.handler";
-dotenv.config();
-
 const app = express();
 const logger = initLogger();
 
