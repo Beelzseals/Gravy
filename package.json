@@ -17,6 +17,7 @@
   },
   "packageManager": "yarn@4.12.0",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1032.0",
     "@aws-sdk/client-sesv2": "^3.1032.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.74.1",
