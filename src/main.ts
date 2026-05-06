@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cookieParser from "cookie-parser";
 import { initLogger } from "./infra/logger/logger";
 import projectRoutes from "./modules/projects/project.routes";
 import { router as authRoutes } from "./modules/auth/auth.routes";
@@ -8,6 +9,7 @@ const app = express();
 const logger = initLogger();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use(errorHandler);
 app.use("/projects", projectRoutes);

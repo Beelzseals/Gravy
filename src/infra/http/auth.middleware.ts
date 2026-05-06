@@ -2,7 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
 import { verifyAccessToken } from "../../core/authorization/token";
 
-export interface CustomRequest<P extends ParamsDictionary = ParamsDictionary> extends Request<P> {
+export interface CustomRequest<
+  P extends ParamsDictionary = ParamsDictionary,
+> extends Request<P> {
   auth?: {
     userId: string;
     orgId: string;
